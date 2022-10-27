@@ -1,0 +1,11 @@
+PROJ = top_icebreaker
+
+PIN_DEF = icebreaker-examples/icebreaker/icebreaker.pcf
+DEVICE = up5k
+PACKAGE = sg48
+
+ADD_SRC = top_tto.v uart_tx.v
+
+prog: iceprog
+
+include icebreaker-examples/main.mk
