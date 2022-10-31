@@ -180,7 +180,62 @@ module lcd (
           en_int <= 1'b0;
           state  <= 28;
         end
-        
+        // CLEARDISPLAY MSB
+        28 : begin
+          data_int <= 0;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          state    <= 29;
+        end
+        // wait 0ms
+        29 : begin
+          en_int <= 1'b0;
+          state  <= 30;
+        end
+        // CLEARDISPLAY LSB
+        30 : begin
+          data_int <= 1;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          state    <= 31;
+        end
+        // wait 0ms
+        31 : begin
+          en_int <= 1'b0;
+          state  <= 32;
+        end
+        // wait 1ms
+        32 : begin
+          state  <= 33;
+        end
+        // wait 2ms
+        33 : begin
+          state  <= 34;
+        end
+        // ENTRYMODESET MSB
+        34 : begin
+          data_int <= 0;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          state    <= 35;
+        end
+        // wait 0ms
+        35 : begin
+          en_int <= 1'b0;
+          state  <= 36;
+        end
+        // ENTRYMODESET LSB
+        36 : begin
+          data_int <= 4 | 2 | 1; // ENTRYLEFT | ENTRYSHIFTINCREMENT
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          state    <= 37;
+        end
+        // wait 0ms
+        37 : begin
+          en_int <= 1'b0;
+          state  <= 38;
+        end
         default : state <= state;
       endcase
     end
