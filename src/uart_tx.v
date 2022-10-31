@@ -3,8 +3,7 @@
 module uart_tx (
                 input  clk,
                 input  reset,
-                output tx_pin,
-                output trig
+                output tx_pin
                 );
 
   wire [7:0]           text [0:12];
@@ -26,23 +25,19 @@ module uart_tx (
   reg [3:0]            text_index;
   
   reg                  tx_pin_int;
-  reg                  trig_int;
   assign tx_pin = tx_pin_int;
-  assign trig = trig_int;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
     if (reset) begin
       bit_counter <= 0;
       tx_pin_int  <= 1'b1;
-      trig_int    <= 0;
       text_index <= 0;
     end else begin
       // bit counter - START, 8xDATA, STOP, IDLE = 11 bits
       if (bit_counter == 10) begin
         // reset
         bit_counter    <= 0;
-        trig_int       <= 1;
         if (text_index == 12) begin
           text_index <= 0;
         end else begin
@@ -51,7 +46,6 @@ module uart_tx (
       end else begin
         // increment counter
         bit_counter <= bit_counter + 1;
-        trig_int <= 0;
       end
       case(bit_counter)
         0       : tx_pin_int = 1'b1; // idle

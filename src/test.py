@@ -10,7 +10,7 @@ async def top(dut):
     
     dut._log.info("reset")
     dut.rst.value = 1
-    await ClockCycles(dut.clk, 2000)
+    await ClockCycles(dut.clk, 10)
     dut.rst.value = 0
 
-    await ClockCycles(dut.clk, 2000000)
+    await ClockCycles(dut.clk, 4000)
