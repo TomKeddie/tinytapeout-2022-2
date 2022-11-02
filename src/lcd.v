@@ -236,6 +236,29 @@ module lcd (
           en_int <= 1'b0;
           state  <= 38;
         end
+        // init done
+        38 : begin
+          data_int <= ("T" >> 4);
+          rs_int   <= 1'b1;
+          en_int   <= 1'b1;
+          state    <= 39;
+        end
+        // wait 0ms
+        39 : begin
+          en_int <= 1'b0;
+          state  <= 40;
+        end
+        40 : begin
+          data_int <= ("T" & 15);
+          rs_int   <= 1'b1;
+          en_int   <= 1'b1;
+          state    <= 41;
+        end
+        // wait 0ms
+        41 : begin
+          en_int <= 1'b0;
+          state  <= 42;
+        end
         default : state <= state;
       endcase
     end
