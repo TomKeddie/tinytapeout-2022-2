@@ -17,27 +17,48 @@ module lcd (
   assign en   = en_int;
   assign rs   = rs_int;
   assign data = data_int;
-  reg [6:0]            delay;
 
-  reg [7:0]            state;
+  reg [6:0]            init_delay;
+  reg [5:0]            init_state;
+  reg                  init_done;
+  wire [7:0]           init_text [0:15];
+  reg [3:0]            init_text_idx;
+  assign init_text[0]  = "T";
+  assign init_text[1]  = "i";
+  assign init_text[2]  = "m";
+  assign init_text[3]  = "e";
+  assign init_text[4]  = " ";
+  assign init_text[5]  = "t";
+  assign init_text[6]  = "o";
+  assign init_text[7]  = " ";
+  assign init_text[8]  = "T";
+  assign init_text[9]  = "a";
+  assign init_text[10] = "p";
+  assign init_text[11] = "e";
+  assign init_text[12] = "o";
+  assign init_text[13] = "u";
+  assign init_text[14] = "t";
+  assign init_text[15] = 0;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
     if (reset) begin
-      en_int   <= 1'b0;
-      rs_int   <= 1'b0;
-      data_int <= 4'b0;
-      state    <= 0;
-      delay    <= 40;
+      en_int     <= 1'b0;
+      rs_int     <= 1'b0;
+      data_int   <= 4'b0;
+      init_state <= 0;
+      init_delay <= 40;
+      init_done  <= 0;
+      init_text_idx <= 0;
     end else begin
-      case(state)
-        // delay 40ms at startup
+      case(init_state)
+        // init_delay 40ms at startup
         0 : begin
-          if (delay != 0) 
+          if (init_delay != 0) 
             begin
-              delay <= delay - 1;
+              init_delay <= init_delay - 1;
             end else begin
-              state <= 1;        
+              init_state <= 1;        
             end                  
         end
         // init 4 bit mode
@@ -45,221 +66,230 @@ module lcd (
           data_int <= 3;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 2;
+          init_state    <= 2;
         end
         // wait 0ms
         2 : begin
           en_int <= 1'b0;
-          state  <= 3;
+          init_state  <= 3;
         end
         // wait 1ms
         3 : begin
-          state  <= 4;
+          init_state  <= 4;
         end
         // wait 2ms
         4 : begin
-          state  <= 5;
+          init_state  <= 5;
         end
         // wait 3ms
         5 : begin
-          state  <= 6;
+          init_state  <= 6;
         end
         // wait 4ms
         6 : begin
-          state  <= 7;
+          init_state  <= 7;
         end
         // wait 5ms
         7 : begin
-          state  <= 8;
+          init_state  <= 8;
         end
         // repeat init 4 bit mode
         8 : begin
           data_int <= 3;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 9;
+          init_state    <= 9;
         end
         // wait 0ms
         9 : begin
           en_int <= 1'b0;
-          state  <= 10;
+          init_state  <= 10;
         end
         // wait 1ms
         10 : begin
-          state  <= 11;
+          init_state  <= 11;
         end
         // wait 2ms
         11 : begin
-          state  <= 12;
+          init_state  <= 12;
         end
         // wait 3ms
         12 : begin
-          state  <= 13;
+          init_state  <= 13;
         end
         // wait 4ms
         13 : begin
-          state  <= 14;
+          init_state  <= 14;
         end
         // wait 5ms
         14 : begin
-          state  <= 15;
+          init_state  <= 15;
         end
         // repeat init 4 bit mode
         15 : begin
           data_int <= 3;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 16;
+          init_state    <= 16;
         end
         // wait 0ms
         16 : begin
           en_int <= 1'b0;
-          state  <= 17;
+          init_state  <= 17;
         end
         // wait 1ms
         17 : begin
-          state  <= 18;
+          init_state  <= 18;
         end
         // set to 4 bit mode
         18 : begin
           data_int <= 2;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 19;
+          init_state    <= 19;
         end
         // wait 0ms
         19 : begin
           en_int <= 1'b0;
-          state  <= 20;
+          init_state  <= 20;
         end
         // FUNCTIONSET MSB
         20 : begin
           data_int <= 2;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 21;
+          init_state    <= 21;
         end
         // wait 0ms
         21 : begin
           en_int <= 1'b0;
-          state  <= 22;
+          init_state  <= 22;
         end
         // FUNCTIONSET LSB (2 lines)
         22 : begin
           data_int <= 8; // C
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 23;
+          init_state    <= 23;
         end
         // wait 0ms
         23 : begin
           en_int <= 1'b0;
-          state  <= 24;
+          init_state  <= 24;
         end
         // DISPLAYCONTROL MSB
         24 : begin
           data_int <= 0;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 25;
+          init_state    <= 25;
         end
         // wait 0ms
         25 : begin
           en_int <= 1'b0;
-          state  <= 26;
+          init_state  <= 26;
         end
         // DISPLAYCONTROL LSB
         26 : begin
           data_int <= 8 | 4; // display on
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 27;
+          init_state    <= 27;
         end
         // wait 0ms
         27 : begin
           en_int <= 1'b0;
-          state  <= 28;
+          init_state  <= 28;
         end
         // CLEARDISPLAY MSB
         28 : begin
           data_int <= 0;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 29;
+          init_state    <= 29;
         end
         // wait 0ms
         29 : begin
           en_int <= 1'b0;
-          state  <= 30;
+          init_state  <= 30;
         end
         // CLEARDISPLAY LSB
         30 : begin
           data_int <= 1;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 31;
+          init_state    <= 31;
         end
         // wait 0ms
         31 : begin
           en_int <= 1'b0;
-          state  <= 32;
+          init_state  <= 32;
         end
         // wait 1ms
         32 : begin
-          state  <= 33;
+          init_state  <= 33;
         end
         // wait 2ms
         33 : begin
-          state  <= 34;
+          init_state  <= 34;
         end
         // ENTRYMODESET MSB
         34 : begin
           data_int <= 0;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 35;
+          init_state    <= 35;
         end
         // wait 0ms
         35 : begin
           en_int <= 1'b0;
-          state  <= 36;
+          init_state  <= 36;
         end
         // ENTRYMODESET LSB
         36 : begin
           data_int <= 4 | 2; // ENTRYLEFT | ENTRYSHIFTINCREMENT
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
-          state    <= 37;
+          init_state    <= 37;
         end
         // wait 0ms
         37 : begin
           en_int <= 1'b0;
-          state  <= 38;
+          init_state  <= 38;
         end
         // init done
         38 : begin
-          data_int <= ("T" >> 4);
+          data_int <= (init_text[init_text_idx] >> 4);
           rs_int   <= 1'b1;
           en_int   <= 1'b1;
-          state    <= 39;
+          init_state    <= 39;
         end
         // wait 0ms
         39 : begin
           en_int <= 1'b0;
-          state  <= 40;
+          init_state  <= 40;
         end
         40 : begin
-          data_int <= ("T" & 15);
-          rs_int   <= 1'b1;
-          en_int   <= 1'b1;
-          state    <= 41;
+          data_int   <= (init_text[init_text_idx] & 15);
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 41;
+          init_text_idx <= init_text_idx + 1;
         end
         // wait 0ms
         41 : begin
-          en_int <= 1'b0;
-          state  <= 42;
+          en_int     <= 1'b0;
+          if (init_text[init_text_idx] == 0) begin
+            init_state <= 42;
+          end else begin
+            init_state <= 38;
+          end
         end
-        default : state <= state;
+
+        default : begin
+          init_state <= init_state;
+          init_done <= 1;
+        end
       endcase
     end
   end
