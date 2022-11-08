@@ -146,7 +146,7 @@ module lcd (
         end
         // FUNCTIONSET LSB (2 lines)
         22 : begin
-          data_int <= 8;
+          data_int <= 8; // C
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
           state    <= 23;
@@ -158,7 +158,7 @@ module lcd (
         end
         // DISPLAYCONTROL MSB
         24 : begin
-          data_int <= 8;
+          data_int <= 0;
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
           state    <= 25;
@@ -170,7 +170,7 @@ module lcd (
         end
         // DISPLAYCONTROL LSB
         26 : begin
-          data_int <= 4; // display on
+          data_int <= 8 | 4; // display on
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
           state    <= 27;
@@ -226,7 +226,7 @@ module lcd (
         end
         // ENTRYMODESET LSB
         36 : begin
-          data_int <= 4 | 2 | 1; // ENTRYLEFT | ENTRYSHIFTINCREMENT
+          data_int <= 4 | 2; // ENTRYLEFT | ENTRYSHIFTINCREMENT
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
           state    <= 37;
