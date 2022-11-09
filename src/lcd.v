@@ -2,13 +2,15 @@
 
 // HD74480 LCD driver, assumes 1kHz clock (ie. 1ms period)
 
-module lcd (
-            input        clk,
-            input        reset,
-            output       en,
-            output       rs, 
-            output [3:0] data 
-            );
+module lcd
+  #(parameter CLOCK_RATE=1000)
+  (
+   input        clk,
+   input        reset,
+   output       en,
+   output       rs, 
+   output [3:0] data
+   ); 
 
 
   reg                  en_int;
@@ -50,6 +52,7 @@ module lcd (
   // time buffer 00:00:00
   reg [7:0]            time_buffer[0:7];
   reg                  time_refresh;
+  reg [9:0]            time_divider;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
@@ -70,6 +73,7 @@ module lcd (
       time_buffer[6] <= "0";
       time_buffer[7] <= "0";
       time_refresh   <= 1;
+      time_divider   <= 0;
     end else begin
       case(init_state)
         // init_delay 40ms at startup
@@ -271,10 +275,14 @@ module lcd (
         end
         // display the time
         35 : begin
-          data_int <= (time_buffer[idx] >> 4); // MSB
-          rs_int   <= 1'b1;
-          en_int   <= 1'b1;
-          init_state    <= 36;
+          if (idx == 0 && time_buffer[idx] == "0") begin
+            data_int <= " " >> 4;
+          end else begin
+            data_int   <= (time_buffer[idx] >> 4); // MSB
+          end
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 36;
         end
         // wait 0ms
         36 : begin
@@ -282,7 +290,11 @@ module lcd (
           init_state  <= 37;
         end
         37 : begin
-          data_int   <= (time_buffer[idx] & 15); // LSB
+          if (idx == 0 && time_buffer[idx] == "0") begin
+            data_int <= " " & 15;
+          end else begin
+            data_int   <= (time_buffer[idx] & 15); // LSB
+          end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
           init_state <= 38;
@@ -301,7 +313,43 @@ module lcd (
         default : begin
           init_state <= 30;
         end
-      endcase
+      endcase // case (init_state)
+
+      if (time_divider == (CLOCK_RATE-1)) begin
+        time_refresh      <= 1;
+        time_divider      <= 0;
+        if (time_buffer[7] == "9") begin
+          time_buffer[7]     <= "0";
+          if (time_buffer[6] == "5") begin
+            time_buffer[6]     <= "0";
+            if (time_buffer[4] == "9") begin
+              time_buffer[4] <= "0";
+              if (time_buffer[3] == "5") begin
+                time_buffer[3]     <= "0";
+                if (time_buffer[0] == "2" && time_buffer[1] == "3") begin
+                  time_buffer[0] <= "0";
+                  time_buffer[1] <= "0";
+                end else if (time_buffer[1] == "9") begin
+                  time_buffer[0] <= time_buffer[0] + 1;  
+                  time_buffer[1] <= "0";                 
+                end else begin                           
+                  time_buffer[1] <= time_buffer[1] + 1; 
+                  end
+              end else begin
+                time_buffer[3] <= time_buffer[3] + 1;
+              end
+            end else begin
+              time_buffer[4] <= time_buffer[4] + 1;
+            end
+          end else begin
+            time_buffer[6] <= time_buffer[6] + 1;
+          end
+        end else begin
+          time_buffer[7] <= time_buffer[7] + 1;
+        end
+      end else begin
+        time_divider <= time_divider + 1;
+      end
     end
   end
 endmodule

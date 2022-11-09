@@ -1,9 +1,11 @@
 `default_nettype none
 
-module top_tto (
-                input [7:0] io_in,
-                output [7:0] io_out
-                );
+module top_tto
+  #(parameter CLOCK_RATE=1000)
+  (
+   input [7:0]  io_in,
+   output [7:0] io_out
+   );
   
   wire                      clk = io_in[0];
   wire                      reset = io_in[1];
