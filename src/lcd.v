@@ -21,8 +21,16 @@ module lcd (
   reg [6:0]            init_delay;
   reg [5:0]            init_state;
   reg                  init_done;
+  reg [3:0]            idx;
+
+  wire [7:0]           init_sequence [0:4];
+  assign init_sequence[0] = 'h28; // FUNCTIONSET
+  assign init_sequence[1] = 'h0c; // DISPLAYCONTROL 
+  assign init_sequence[2] = 'h06; // ENTRYMODESET
+  assign init_sequence[3] = 'h01; // CLEARDISPLAY
+  assign init_sequence[4] = 0;
+
   wire [7:0]           init_text [0:15];
-  reg [3:0]            init_text_idx;
   assign init_text[0]  = "T";
   assign init_text[1]  = "i";
   assign init_text[2]  = "m";
@@ -49,7 +57,7 @@ module lcd (
       init_state <= 0;
       init_delay <= 40;
       init_done  <= 0;
-      init_text_idx <= 0;
+      idx <= 0;
     end else begin
       case(init_state)
         // init_delay 40ms at startup
@@ -153,9 +161,8 @@ module lcd (
           en_int <= 1'b0;
           init_state  <= 20;
         end
-        // FUNCTIONSET MSB
         20 : begin
-          data_int <= 2;
+          data_int <= (init_sequence[idx] >> 4);
           rs_int   <= 1'b0;
           en_int   <= 1'b1;
           init_state    <= 21;
@@ -165,34 +172,35 @@ module lcd (
           en_int <= 1'b0;
           init_state  <= 22;
         end
-        // FUNCTIONSET LSB (2 lines)
         22 : begin
-          data_int <= 8; // C
+          data_int   <= (init_sequence[idx] & 15);
           rs_int   <= 1'b0;
-          en_int   <= 1'b1;
-          init_state    <= 23;
+          en_int     <= 1'b1;
+          idx <= idx + 1;
+          init_state <= 23;
         end
         // wait 0ms
         23 : begin
-          en_int <= 1'b0;
-          init_state  <= 24;
+          en_int     <= 1'b0;
+          if (init_sequence[idx] == 0) begin
+            init_state <= 24;
+          end else begin
+            init_state <= 20;
+          end
         end
-        // DISPLAYCONTROL MSB
+        // wait 1ms
         24 : begin
-          data_int <= 0;
-          rs_int   <= 1'b0;
-          en_int   <= 1'b1;
-          init_state    <= 25;
+          init_state  <= 25;
         end
-        // wait 0ms
+        // wait 2ms
         25 : begin
-          en_int <= 1'b0;
           init_state  <= 26;
+          idx <= 0;
         end
-        // DISPLAYCONTROL LSB
+        // init done
         26 : begin
-          data_int <= 8 | 4; // display on
-          rs_int   <= 1'b0;
+          data_int <= (init_text[idx] >> 4); // MSB
+          rs_int   <= 1'b1;
           en_int   <= 1'b1;
           init_state    <= 27;
         end
@@ -201,91 +209,22 @@ module lcd (
           en_int <= 1'b0;
           init_state  <= 28;
         end
-        // CLEARDISPLAY MSB
         28 : begin
-          data_int <= 0;
-          rs_int   <= 1'b0;
-          en_int   <= 1'b1;
-          init_state    <= 29;
+          data_int   <= (init_text[idx] & 15); // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 29;
+          idx <= idx + 1;
         end
         // wait 0ms
         29 : begin
-          en_int <= 1'b0;
-          init_state  <= 30;
-        end
-        // CLEARDISPLAY LSB
-        30 : begin
-          data_int <= 1;
-          rs_int   <= 1'b0;
-          en_int   <= 1'b1;
-          init_state    <= 31;
-        end
-        // wait 0ms
-        31 : begin
-          en_int <= 1'b0;
-          init_state  <= 32;
-        end
-        // wait 1ms
-        32 : begin
-          init_state  <= 33;
-        end
-        // wait 2ms
-        33 : begin
-          init_state  <= 34;
-        end
-        // ENTRYMODESET MSB
-        34 : begin
-          data_int <= 0;
-          rs_int   <= 1'b0;
-          en_int   <= 1'b1;
-          init_state    <= 35;
-        end
-        // wait 0ms
-        35 : begin
-          en_int <= 1'b0;
-          init_state  <= 36;
-        end
-        // ENTRYMODESET LSB
-        36 : begin
-          data_int <= 4 | 2; // ENTRYLEFT | ENTRYSHIFTINCREMENT
-          rs_int   <= 1'b0;
-          en_int   <= 1'b1;
-          init_state    <= 37;
-        end
-        // wait 0ms
-        37 : begin
-          en_int <= 1'b0;
-          init_state  <= 38;
-        end
-        // init done
-        38 : begin
-          data_int <= (init_text[init_text_idx] >> 4);
-          rs_int   <= 1'b1;
-          en_int   <= 1'b1;
-          init_state    <= 39;
-        end
-        // wait 0ms
-        39 : begin
-          en_int <= 1'b0;
-          init_state  <= 40;
-        end
-        40 : begin
-          data_int   <= (init_text[init_text_idx] & 15);
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 41;
-          init_text_idx <= init_text_idx + 1;
-        end
-        // wait 0ms
-        41 : begin
           en_int     <= 1'b0;
-          if (init_text[init_text_idx] == 0) begin
-            init_state <= 42;
+          if (init_text[idx] == 0) begin
+            init_state <= 30;
           end else begin
-            init_state <= 38;
+            init_state <= 26;
           end
         end
-
         default : begin
           init_state <= init_state;
           init_done <= 1;
