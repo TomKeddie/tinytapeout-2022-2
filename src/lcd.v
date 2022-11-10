@@ -50,28 +50,34 @@ module lcd
 //   assign init_text[15] = "e" - "A" + 1;
 
   // time buffer 00:00:00
-  reg [3:0]            time_buffer[0:5];
+  // reg [3:0]            time_buffer[0:5];
+  reg [5:0]            time_seconds;
+  reg [5:0]            time_minutes;
+  reg [4:0]            time_hours;
   reg                  time_refresh;
   reg [9:0]            time_divider;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
     if (reset) begin
-      en_int         <= 1'b0;
-      rs_int         <= 1'b0;
-      data_int       <= 4'b0;
-      init_state     <= 0;
-      init_delay     <= 40;
-      init_done      <= 0;
-      idx            <= 0;
-      time_buffer[0] <= 0;
-      time_buffer[1] <= 0;
-      time_buffer[2] <= 0;
-      time_buffer[3] <= 0;
-      time_buffer[4] <= 0;
-      time_buffer[5] <= 0;
-      time_refresh   <= 1;
-      time_divider   <= 0;
+      en_int       <= 1'b0;
+      rs_int       <= 1'b0;
+      data_int     <= 4'b0;
+      init_state   <= 0;
+      init_delay   <= 40;
+      init_done    <= 0;
+      idx          <= 0;
+//       time_buffer[0] <= 0;
+//       time_buffer[1] <= 0;
+//       time_buffer[2] <= 0;
+//       time_buffer[3] <= 0;
+//       time_buffer[4] <= 0;
+//       time_buffer[5] <= 0;
+      time_seconds <= 0;
+      time_minutes <= 0;
+      time_hours <= 0;
+      time_refresh <= 1;
+      time_divider <= 0;
     end else begin
       case(init_state)
         // init_delay 40ms at startup
@@ -281,7 +287,7 @@ module lcd
         end
         // display the time
         35 : begin
-          if (idx == 0 && time_buffer[idx] == 0) begin
+          if (idx == 0 && time_seconds == 0) begin
             data_int <= " " >> 4;
           end else begin
             data_int   <= "0" >> 4; // MSB
@@ -296,10 +302,10 @@ module lcd
           init_state  <= 37;
         end
         37 : begin
-          if (idx == 0 && time_buffer[idx] == 0) begin
+          if (idx == 0 && time_minutes == 0) begin
             data_int <= " " & 15;
           end else begin
-            data_int   <= time_buffer[idx]; // LSB
+            data_int   <= time_hours; // LSB
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
@@ -321,41 +327,27 @@ module lcd
         end
       endcase // case (init_state)
 
-//       if (time_divider == (CLOCK_RATE-1)/60) begin
-//         time_refresh      <= 1;
-//         time_divider      <= 0;
-//         if (time_buffer[5] == 9) begin
-//           time_buffer[5]     <= 0;
-//           if (time_buffer[4] == 5) begin
-//             time_buffer[4]     <= 0;
-//             if (time_buffer[3] == 9) begin
-//               time_buffer[3] <= 0;
-//               if (time_buffer[2] == 5) begin
-//                 time_buffer[2]     <= 0;
-//                 if (time_buffer[0] == 2 && time_buffer[1] == 3) begin
-//                   time_buffer[0] <= 0;
-//                   time_buffer[1] <= 0;
-//                 end else if (time_buffer[1] == 9) begin
-//                   time_buffer[0] <= time_buffer[0] + 1;
-//                   time_buffer[1] <= 0;
-//                 end else begin
-//                   time_buffer[1] <= time_buffer[1] + 1;
-//                   end
-//               end else begin
-//                 time_buffer[2] <= time_buffer[2] + 1;
-//               end
-//             end else begin
-//               time_buffer[3] <= time_buffer[3] + 1;
-//             end
-//           end else begin
-//             time_buffer[4] <= time_buffer[4] + 1;
-//           end
-//         end else begin
-//           time_buffer[5] <= time_buffer[5] + 1;
-//         end
-//       end else begin
-//         time_divider <= time_divider + 1;
-//       end
+      if (time_divider == (CLOCK_RATE-1)/60) begin
+        time_refresh     <= 1;
+        time_divider     <= 0;
+        if (time_seconds != 59) begin
+          time_seconds <= time_seconds + 1;
+        end else begin
+          time_seconds     <= 0;
+          if (time_minutes != 59) begin
+            time_minutes <= time_minutes + 1;
+          end else begin
+            time_minutes   <= 0;
+            if (time_hours != 23) begin
+              time_hours <= time_hours + 1;
+            end else begin
+              time_hours <= 0;
+            end
+          end
+        end
+      end else begin
+        time_divider <= time_divider + 1;
+      end
     end
   end
 endmodule
