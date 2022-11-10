@@ -20,10 +20,10 @@ module top_tto
   assign io_out[3] = lcd_data[3];
   assign io_out[4] = lcd_en;
   assign io_out[5] = lcd_rs;
-  assign io_out[7] = uart_tx_pin;
+  assign io_out[7] = 0; // uart_tx_pin;
 
   // instantiate uart
-  uart_tx uart_tx(.clk(clk), .reset(reset), .tx_pin(uart_tx_pin));
+  // uart_tx uart_tx(.clk(clk), .reset(reset), .tx_pin(uart_tx_pin));
 
   // instatiate lcd
   lcd lcd(.clk(clk), .reset(reset), .en(lcd_en), .rs(lcd_rs), .data(lcd_data));
