@@ -31,23 +31,23 @@ module lcd
   assign init_sequence[2] = 'h06; // ENTRYMODESET
   assign init_sequence[3] = 'h01; // CLEARDISPLAY
 
-  wire [7:0]           init_text [0:15];
-  assign init_text[0]  = "I";
-  assign init_text[1]  = "t";
-  assign init_text[2]  = "s";
-  assign init_text[3]  = " ";
-  assign init_text[4]  = "T";
-  assign init_text[5]  = "a";
-  assign init_text[6]  = "p";
-  assign init_text[7]  = "e";
-  assign init_text[8]  = "o";
-  assign init_text[9]  = "u";
-  assign init_text[10] = "t";
-  assign init_text[11] = " ";
-  assign init_text[12] = "T";
-  assign init_text[13] = "i";
-  assign init_text[14] = "m";
-  assign init_text[15] = "e";
+  wire [5:0]           init_text [0:15];
+  assign init_text[0]  = "I" - "A" + 1;
+  assign init_text[1]  = "t" - "A" + 1;
+  assign init_text[2]  = "s" - "A" + 1;
+  assign init_text[3]  = 0;
+  assign init_text[4]  = "T" - "A" + 1;
+  assign init_text[5]  = "a" - "A" + 1;
+  assign init_text[6]  = "p" - "A" + 1;
+  assign init_text[7]  = "e" - "A" + 1;
+  assign init_text[8]  = "o" - "A" + 1;
+  assign init_text[9]  = "u" - "A" + 1;
+  assign init_text[10] = "t" - "A" + 1;
+  assign init_text[11] = 0;
+  assign init_text[12] = "T" - "A" + 1;
+  assign init_text[13] = "i" - "A" + 1;
+  assign init_text[14] = "m" - "A" + 1;
+  assign init_text[15] = "e" - "A" + 1;
 
   // time buffer 00:00:00
   reg [3:0]            time_buffer[0:5];
@@ -213,10 +213,14 @@ module lcd
         end
         // init done
         26 : begin
-          data_int <= (init_text[idx] >> 4); // MSB
-          rs_int   <= 1'b1;
-          en_int   <= 1'b1;
-          init_state    <= 27;
+          if (init_text[idx] == 0) begin
+            data_int   <= 2; // space
+          end else begin
+            data_int   <= 4 | init_text[idx][5:4]; // MSB
+          end
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 27;
         end
         // wait 0ms
         27 : begin
@@ -224,11 +228,15 @@ module lcd
           init_state  <= 28;
         end
         28 : begin
-          data_int   <= (init_text[idx] & 15); // LSB
+          if (init_text[idx] == 0) begin
+            data_int   <= 0; // space
+          end else begin
+            data_int   <= init_text[idx][3:0];
+          end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
           init_state <= 29;
-          idx <= idx + 1;
+          idx        <= idx + 1;
         end
         // wait 0ms
         29 : begin
