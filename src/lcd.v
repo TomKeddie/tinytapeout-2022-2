@@ -50,7 +50,7 @@ module lcd
   assign init_text[15] = "e";
 
   // time buffer 00:00:00
-  reg [7:0]            time_buffer[0:7];
+  reg [3:0]            time_buffer[0:5];
   reg                  time_refresh;
   reg [9:0]            time_divider;
 
@@ -64,14 +64,12 @@ module lcd
       init_delay     <= 40;
       init_done      <= 0;
       idx            <= 0;
-      time_buffer[0] <= "0";
-      time_buffer[1] <= "0";
-      time_buffer[2] <= ":";
-      time_buffer[3] <= "0";
-      time_buffer[4] <= "0";
-      time_buffer[5] <= ":";
-      time_buffer[6] <= "0";
-      time_buffer[7] <= "0";
+      time_buffer[0] <= 0;
+      time_buffer[1] <= 0;
+      time_buffer[2] <= 0;
+      time_buffer[3] <= 0;
+      time_buffer[4] <= 0;
+      time_buffer[5] <= 0;
       time_refresh   <= 1;
       time_divider   <= 0;
     end else begin
@@ -82,7 +80,7 @@ module lcd
             begin
               init_delay <= init_delay - 1;
             end else begin
-              init_state <= 1;        
+              init_state <= 1;
             end                  
         end
         // init 4 bit mode
@@ -275,10 +273,10 @@ module lcd
         end
         // display the time
         35 : begin
-          if (idx == 0 && time_buffer[idx] == "0") begin
+          if (idx == 0 && time_buffer[idx] == 0) begin
             data_int <= " " >> 4;
           end else begin
-            data_int   <= (time_buffer[idx] >> 4); // MSB
+            data_int   <= "0" >> 4; // MSB
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
@@ -290,10 +288,10 @@ module lcd
           init_state  <= 37;
         end
         37 : begin
-          if (idx == 0 && time_buffer[idx] == "0") begin
+          if (idx == 0 && time_buffer[idx] == 0) begin
             data_int <= " " & 15;
           end else begin
-            data_int   <= (time_buffer[idx] & 15); // LSB
+            data_int   <= time_buffer[idx]; // LSB
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
@@ -303,7 +301,7 @@ module lcd
         // wait 0ms
         38 : begin
           en_int     <= 1'b0;
-          if (idx == 8) begin
+          if (idx == 6) begin
             init_state <= 39;
             idx <= 0;
           end else begin
@@ -315,37 +313,37 @@ module lcd
         end
       endcase // case (init_state)
 
-      if (time_divider == (CLOCK_RATE-1)) begin
+      if (time_divider == (CLOCK_RATE-1)/60) begin
         time_refresh      <= 1;
         time_divider      <= 0;
-        if (time_buffer[7] == "9") begin
-          time_buffer[7]     <= "0";
-          if (time_buffer[6] == "5") begin
-            time_buffer[6]     <= "0";
-            if (time_buffer[4] == "9") begin
-              time_buffer[4] <= "0";
-              if (time_buffer[3] == "5") begin
-                time_buffer[3]     <= "0";
-                if (time_buffer[0] == "2" && time_buffer[1] == "3") begin
-                  time_buffer[0] <= "0";
-                  time_buffer[1] <= "0";
-                end else if (time_buffer[1] == "9") begin
+        if (time_buffer[5] == 9) begin
+          time_buffer[5]     <= 0;
+          if (time_buffer[4] == 5) begin
+            time_buffer[4]     <= 0;
+            if (time_buffer[3] == 9) begin
+              time_buffer[3] <= 0;
+              if (time_buffer[2] == 5) begin
+                time_buffer[2]     <= 0;
+                if (time_buffer[0] == 2 && time_buffer[1] == 3) begin
+                  time_buffer[0] <= 0;
+                  time_buffer[1] <= 0;
+                end else if (time_buffer[1] == 9) begin
                   time_buffer[0] <= time_buffer[0] + 1;  
-                  time_buffer[1] <= "0";                 
+                  time_buffer[1] <= 0;
                 end else begin                           
                   time_buffer[1] <= time_buffer[1] + 1; 
                   end
               end else begin
-                time_buffer[3] <= time_buffer[3] + 1;
+                time_buffer[2] <= time_buffer[2] + 1;
               end
             end else begin
-              time_buffer[4] <= time_buffer[4] + 1;
+              time_buffer[3] <= time_buffer[3] + 1;
             end
           end else begin
-            time_buffer[6] <= time_buffer[6] + 1;
+            time_buffer[4] <= time_buffer[4] + 1;
           end
         end else begin
-          time_buffer[7] <= time_buffer[7] + 1;
+          time_buffer[5] <= time_buffer[5] + 1;
         end
       end else begin
         time_divider <= time_divider + 1;
