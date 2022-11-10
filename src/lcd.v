@@ -51,11 +51,10 @@ module lcd
 
   // time buffer 00:00:00
   // reg [3:0]            time_buffer[0:5];
-  reg [5:0]            time_seconds;
   reg [5:0]            time_minutes;
   reg [4:0]            time_hours;
   reg                  time_refresh;
-  reg [9:0]            time_divider;
+  reg [13:0]           time_divider;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
@@ -73,7 +72,6 @@ module lcd
 //       time_buffer[3] <= 0;
 //       time_buffer[4] <= 0;
 //       time_buffer[5] <= 0;
-      time_seconds <= 0;
       time_minutes <= 0;
       time_hours <= 0;
       time_refresh <= 1;
@@ -287,7 +285,7 @@ module lcd
         end
         // display the time
         35 : begin
-          if (idx == 0 && time_seconds == 0) begin
+          if (idx == 0 && time_hours == 0) begin
             data_int <= " " >> 4;
           end else begin
             data_int   <= "0" >> 4; // MSB
@@ -327,22 +325,17 @@ module lcd
         end
       endcase // case (init_state)
 
-      if (time_divider == (CLOCK_RATE-1)/60) begin
+      if (time_divider == (CLOCK_RATE-1)*60) begin
         time_refresh     <= 1;
         time_divider     <= 0;
-        if (time_seconds != 59) begin
-          time_seconds <= time_seconds + 1;
+        if (time_minutes != 59) begin
+          time_minutes <= time_minutes + 1;
         end else begin
-          time_seconds     <= 0;
-          if (time_minutes != 59) begin
-            time_minutes <= time_minutes + 1;
+          time_minutes   <= 0;
+          if (time_hours != 23) begin
+            time_hours <= time_hours + 1;
           end else begin
-            time_minutes   <= 0;
-            if (time_hours != 23) begin
-              time_hours <= time_hours + 1;
-            end else begin
-              time_hours <= 0;
-            end
+            time_hours <= 0;
           end
         end
       end else begin
