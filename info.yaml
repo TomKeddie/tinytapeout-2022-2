@@ -4,7 +4,6 @@ project:
   wokwi_id:    0        # If using wokwi, set this to your project's ID
   source_files:        # If using an HDL, set wokwi_id as 0 and uncomment and list your source files here. Source files must be in ./src
     - top_tto.v
-    - uart_tx.v
     - lcd.v
   top_module:  "top_tto"      # put the name of your top module here, make it unique by prepending your github username
 
@@ -16,12 +15,12 @@ project:
 # This info will be automatically collected and used to make a datasheet for the chip.
 documentation: 
   author:       "Tom Keddie"      # Your name
-  discord:      "TomKeddie"      # Your discord handle
-  title:        "HD74480 Clock & UART transmitter"      # Project title
-  description:  "Displays a clock on a attached HD74480 & transmits a uart string"      # Short description of what your project does
+  discord:      "TomKeddie"       # Your discord handle
+  title:        "HD74480 Clock"   # Project title
+  description:  "Displays a clock on a attached HD74480"      # Short description of what your project does
   how_it_works: "See https://github.com/TomKeddie/tinytapeout-2022-2/blob/main/doc/README.md"
   how_to_test:  "See https://github.com/TomKeddie/tinytapeout-2022-2/blob/main/doc/README.md"
-  external_hw:  "HD74480 & Serial Receiver"      # Describe any external hardware needed
+  external_hw:  "HD74480"      # Describe any external hardware needed
   language:     "verilog" # other examples include Verilog, Amaranth, VHDL, etc
   doc_link:     "https://github.com/TomKeddie/tinytapeout-2022-2/blob/main/doc/README.md"
   clock_hz:     1000       # Clock frequency in Hz (if required)
