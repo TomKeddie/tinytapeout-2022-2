@@ -32,8 +32,8 @@ documentation:
     - none
     - none
     - none
-    - none
-    - none
+    - hour set
+    - minute set
   outputs:
     - lcd D4
     - lcd D5
@@ -42,5 +42,5 @@ documentation:
     - lcd EN
     - lcd RS
     - none
-    - uart tx output
+    - none
 

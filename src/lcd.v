@@ -7,52 +7,37 @@ module lcd
   (
    input        clk,
    input        reset,
+   input        hour_inc,
+   input        min_inc,
    output       en,
    output       rs, 
    output [3:0] data
    ); 
 
 
-  reg                  en_int;
-  reg                  rs_int;
-  reg [3:0]            data_int;
+  reg           en_int;
+  reg           rs_int;
+  reg [3:0]     data_int;
   assign en   = en_int;
   assign rs   = rs_int;
   assign data = data_int;
 
-  reg [5:0]            init_state;
-  reg                  init_done;
-  reg [4:0]            idx;
+  reg [5:0]     init_state;
+  reg           init_done;
+  reg [4:0]     idx;
 
-  wire [7:0]           init_sequence [0:3];
+  wire [7:0]    init_sequence [0:3];
   assign init_sequence[0] = 'h28; // FUNCTIONSET
   assign init_sequence[1] = 'h0c; // DISPLAYCONTROL 
   assign init_sequence[2] = 'h06; // ENTRYMODESET
   assign init_sequence[3] = 'h01; // CLEARDISPLAY
 
-//   wire [5:0]           init_text [0:15];
-//   assign init_text[0]  = "I" - "A" + 1;
-//   assign init_text[1]  = "t" - "A" + 1;
-//   assign init_text[2]  = "s" - "A" + 1;
-//   assign init_text[3]  = 0;
-//   assign init_text[4]  = "T" - "A" + 1;
-//   assign init_text[5]  = "a" - "A" + 1;
-//   assign init_text[6]  = "p" - "A" + 1;
-//   assign init_text[7]  = "e" - "A" + 1;
-//   assign init_text[8]  = "o" - "A" + 1;
-//   assign init_text[9]  = "u" - "A" + 1;
-//   assign init_text[10] = "t" - "A" + 1;
-//   assign init_text[11] = 0;
-//   assign init_text[12] = "T" - "A" + 1;
-//   assign init_text[13] = "i" - "A" + 1;
-//   assign init_text[14] = "m" - "A" + 1;
-//   assign init_text[15] = "e" - "A" + 1;
+  reg [5:0]     time_minutes;
+  reg [4:0]     time_hours;
+  reg [15:0]    time_divider;
 
-  // time buffer 00:00:00
-  // reg [3:0]            time_buffer[0:5];
-  reg [5:0]            time_minutes;
-  reg [4:0]            time_hours;
-  reg [15:0]           time_divider;
+  reg           min_inc_1d;
+  reg           hour_inc_1d;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
@@ -61,11 +46,13 @@ module lcd
       rs_int       <= 1'b0;
       data_int     <= 4'b0;
       init_state   <= 0;
-      time_divider   <= 40;
+      time_divider <= 40;
       init_done    <= 0;
       idx          <= 0;
       time_minutes <= 0;
-      time_hours <= 0;
+      time_hours   <= 0;
+      min_inc_1d   <= 0;
+      hour_inc_1d  <= 0;
     end else begin
       case(init_state)
         // time_divider 40ms at startup
@@ -203,74 +190,35 @@ module lcd
         end
         // wait 2ms
         25 : begin
-          init_state  <= 31;
+          init_state  <= 26;
           init_done   <= 1;
         end
-        // init done
-//         26 : begin
-//           if (init_text[idx] == 0) begin
-//             data_int   <= 2; // space
-//           end else begin
-//             data_int   <= 4 | init_text[idx][5:4]; // MSB
-//           end
-//           rs_int     <= 1'b1;
-//           en_int     <= 1'b1;
-//           init_state <= 27;
-//         end
-//         // wait 0ms
-//         27 : begin
-//           en_int <= 1'b0;
-//           init_state  <= 28;
-//         end
-//         28 : begin
-//           if (init_text[idx] == 0) begin
-//             data_int   <= 0; // space
-//           end else begin
-//             data_int   <= init_text[idx][3:0];
-//           end
-//           rs_int     <= 1'b1;
-//           en_int     <= 1'b1;
-//           init_state <= 29;
-//           idx        <= idx + 1;
-//         end
-//         // wait 0ms
-//         29 : begin
-//           en_int     <= 1'b0;
-//           if (idx == 16) begin
-//             init_state <= 31;
-//             idx        <= 0;
-//             init_done    <= 1;
-//           end else begin
-//             init_state <= 26;
-//           end
-//         end
-//         // time refresh
-        31: begin
-          // cursor to second row
-          data_int <= 8 + 4; // SETDDRAMADDR + 2nd Row
+        26: begin
+          // cursor to home
+          data_int <= 8; // SETDDRAMADDR
           rs_int     <= 1'b0;
           en_int     <= 1'b1;
-          init_state <= 32;
+          init_state <= 27;
         end
         // wait 0ms
-        32 : begin
+        27 : begin
           en_int <= 1'b0;
-          init_state  <= 33;
+          init_state  <= 28;
         end
-        33: begin
-          // cursor to second row, nth column
-          data_int <= 11;
+        28: begin
+          // cursor to home
+          data_int    <= 0;
           rs_int     <= 1'b0;
           en_int     <= 1'b1;
-          init_state <= 34;
+          init_state <= 29;
         end
         // wait 0ms
-        34 : begin
+        29 : begin
           en_int <= 1'b0;
-          init_state  <= 35;
+          init_state  <= 30;
         end
         // display the first digit of the hour
-        35 : begin
+        30 : begin
           if (time_hours < 10) begin
             data_int <= " " >> 4;
           end else begin
@@ -278,14 +226,14 @@ module lcd
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 36;
+          init_state <= 31;
         end
         // wait 0ms
-        36 : begin
+        31 : begin
           en_int <= 1'b0;
-          init_state  <= 37;
+          init_state  <= 32;
         end
-        37 : begin
+        32 : begin
           if (time_hours < 10) begin
             data_int <= " " & 15;
           end else begin
@@ -293,107 +241,119 @@ module lcd
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 38;
+          init_state <= 33;
         end
         // wait 0ms
-        38 : begin
+        33 : begin
           en_int     <= 1'b0;
-          init_state <= 39;
+          init_state <= 34;
         end
         // display the second digit of the hour
-        39 : begin
+        34 : begin
           data_int   <= "0" >> 4; // MSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 40;
+          init_state <= 35;
         end
         // wait 0ms
-        40 : begin
+        35 : begin
           en_int <= 1'b0;
-          init_state  <= 41;
+          init_state  <= 36;
         end
-        41 : begin
+        36 : begin
           data_int   <= time_hours % 10; // LSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 42;
+          init_state <= 37;
         end
         // wait 0ms
-        42 : begin
+        37 : begin
           en_int     <= 1'b0;
-          init_state <= 43;
+          init_state <= 38;
         end
         // display the colon
-        43 : begin
+        38 : begin
           data_int   <= ":" >> 4; // MSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 44;
+          init_state <= 39;
         end
         // wait 0ms
-        44 : begin
+        39 : begin
           en_int <= 1'b0;
-          init_state  <= 45;
+          init_state  <= 40;
         end
-        45 : begin
+        40 : begin
           data_int   <= ":" & 15; // LSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 46;
+          init_state <= 41;
         end
         // wait 0ms
-        46 : begin
+        41 : begin
           en_int     <= 1'b0;
-          init_state <= 47;
+          init_state <= 42;
         end
         // display the first digit of the minutes
-        47 : begin
+        42 : begin
           data_int <= "0" >> 4; // MSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 48;
+          init_state <= 43;
         end
         // wait 0ms
-        48 : begin
+        43 : begin
           en_int <= 1'b0;
-          init_state  <= 49;
+          init_state  <= 44;
         end
-        49 : begin
+        44 : begin
           data_int   <= time_minutes / 10; // LSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 50;
+          init_state <= 45;
         end
         // wait 0ms
-        50 : begin
+        45 : begin
           en_int     <= 1'b0;
-          init_state <= 51;
+          init_state <= 46;
         end
         // display the second digit of the minutes
-        51 : begin
+        46 : begin
           data_int   <= "0" >> 4; // MSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 52;
+          init_state <= 47;
         end
         // wait 0ms
-        52 : begin
+        47 : begin
           en_int <= 1'b0;
-          init_state  <= 53;
+          init_state  <= 48;
         end
-        53 : begin
+        48 : begin
           data_int   <= time_minutes % 10; // LSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 54;
+          init_state <= 49;
         end
         // wait 0ms
         default : begin
           en_int     <= 1'b0;
-          init_state <= 31;
+          init_state <= 26;
         end
       endcase // case (init_state)
 
+      // time set
+      min_inc_1d  <= min_inc;
+      hour_inc_1d <= hour_inc;
+      if (!min_inc_1d && min_inc) begin
+        time_minutes <= time_minutes + 1;
+        time_divider <= 0;
+      end
+      if (!hour_inc_1d && hour_inc) begin
+        time_hours <= time_hours + 1;
+      end
+
+      // clock divider and time incrementer
       if (init_done) begin
         if (time_divider == (CLOCK_RATE*60-1)) begin
           time_divider     <= 0;
@@ -410,7 +370,7 @@ module lcd
         end else begin
           time_divider <= time_divider + 1;
         end // else: !if(time_divider == (CLOCK_RATE*60-1))
+      end
     end
-  end
   end
 endmodule

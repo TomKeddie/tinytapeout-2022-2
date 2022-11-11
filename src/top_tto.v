@@ -7,8 +7,10 @@ module top_tto
    output [7:0] io_out
    );
   
-  wire                      clk = io_in[0];
+  wire                      clk   = io_in[0];
   wire                      reset = io_in[1];
+  wire                      hour_inc = io_in[6];
+  wire                      min_inc  = io_in[7];
   wire                      uart_tx_pin;
   wire                      lcd_en;
   wire                      lcd_rs;
@@ -23,6 +25,6 @@ module top_tto
   assign io_out[7] = 0; // uart_tx_pin;
 
   // instatiate lcd
-  lcd lcd(.clk(clk), .reset(reset), .en(lcd_en), .rs(lcd_rs), .data(lcd_data));
+  lcd lcd(.clk(clk), .reset(reset), .hour_inc(hour_inc), .min_inc(min_inc), .en(lcd_en), .rs(lcd_rs), .data(lcd_data));
   
 endmodule
