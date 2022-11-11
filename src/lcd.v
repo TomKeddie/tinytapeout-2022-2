@@ -204,6 +204,7 @@ module lcd
         // wait 2ms
         25 : begin
           init_state  <= 31;
+          init_done   <= 1;
         end
         // init done
 //         26 : begin
