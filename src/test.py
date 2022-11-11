@@ -13,4 +13,4 @@ async def top(dut):
     await ClockCycles(dut.clk, 10)
     dut.rst.value = 0
 
-    await ClockCycles(dut.clk, 4000000)
+    await ClockCycles(dut.clk, 400000)
