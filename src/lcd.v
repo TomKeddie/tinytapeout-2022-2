@@ -13,20 +13,47 @@ module lcd
    ); 
 
 
-  reg           en_int;
-  reg           rs_int;
-  reg [3:0]     data_int;
+  reg                  en_int;
+  reg                  rs_int;
+  reg [3:0]            data_int;
   assign en   = en_int;
   assign rs   = rs_int;
   assign data = data_int;
 
-  reg [7:0]     init_state;
+  reg [6:0]            init_delay;
+  reg [5:0]            init_state;
+  reg                  init_done;
+  reg [4:0]            idx;
+
+  wire [7:0]           init_sequence [0:3];
+  assign init_sequence[0] = 'h28; // FUNCTIONSET
+  assign init_sequence[1] = 'h0c; // DISPLAYCONTROL 
+  assign init_sequence[2] = 'h06; // ENTRYMODESET
+  assign init_sequence[3] = 'h01; // CLEARDISPLAY
+
+  wire [5:0]           init_text [0:15];
+  assign init_text[0]  = "I" - "A" + 1;
+  assign init_text[1]  = "t" - "A" + 1;
+  assign init_text[2]  = "s" - "A" + 1;
+  assign init_text[3]  = 0;
+  assign init_text[4]  = "T" - "A" + 1;
+  assign init_text[5]  = "a" - "A" + 1;
+  assign init_text[6]  = "p" - "A" + 1;
+  assign init_text[7]  = "e" - "A" + 1;
+  assign init_text[8]  = "o" - "A" + 1;
+  assign init_text[9]  = "u" - "A" + 1;
+  assign init_text[10] = "t" - "A" + 1;
+  assign init_text[11] = 0;
+  assign init_text[12] = "T" - "A" + 1;
+  assign init_text[13] = "i" - "A" + 1;
+  assign init_text[14] = "m" - "A" + 1;
+  assign init_text[15] = "e" - "A" + 1;
 
   // time buffer 00:00:00
   // reg [3:0]            time_buffer[0:5];
-  reg [5:0]     time_minutes;
-  reg [4:0]     time_hours;
-  reg [13:0]    time_divider;
+  reg [5:0]            time_minutes;
+  reg [4:0]            time_hours;
+  reg [13:0]           time_divider;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
@@ -35,618 +62,221 @@ module lcd
       rs_int       <= 1'b0;
       data_int     <= 4'b0;
       init_state   <= 0;
+      init_delay   <= 40;
+      init_done    <= 0;
+      idx          <= 0;
+//       time_buffer[0] <= 0;
+//       time_buffer[1] <= 0;
+//       time_buffer[2] <= 0;
+//       time_buffer[3] <= 0;
+//       time_buffer[4] <= 0;
+//       time_buffer[5] <= 0;
       time_minutes <= 0;
       time_hours <= 0;
-      time_divider <= 40;
+      time_divider <= 0;
     end else begin
       case(init_state)
         // init_delay 40ms at startup
         0 : begin
-          if (time_divider != 0) 
+          if (init_delay != 0) 
             begin
-              time_divider <= time_divider - 1;
+              init_delay <= init_delay - 1;
             end else begin
               init_state <= 1;
             end                  
         end
-        // rising edge of EN for 4 bit init - writing 3
+        // init 4 bit mode
         1 : begin
-          data_int   <= 3;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 2;
+          data_int <= 3;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          init_state    <= 2;
         end
-        // falling edge of EN for 4 bit init - writing 3
+        // wait 0ms
         2 : begin
-          en_int     <= 1'b0;
-          init_state <= 3;
+          en_int <= 1'b0;
+          init_state  <= 3;
         end
-        // delay
+        // wait 1ms
         3 : begin
-          init_state    <= 4;
+          init_state  <= 4;
         end
-        // delay
+        // wait 2ms
         4 : begin
-          init_state    <= 5;
+          init_state  <= 5;
         end
-        // delay
+        // wait 3ms
         5 : begin
-          init_state    <= 6;
+          init_state  <= 6;
         end
-        // delay
+        // wait 4ms
         6 : begin
-          init_state    <= 7;
+          init_state  <= 7;
         end
-        // delay
+        // wait 5ms
         7 : begin
-          init_state    <= 8;
+          init_state  <= 8;
         end
-        // rising edge of EN for 4 bit init (repeated) - writing 3
+        // repeat init 4 bit mode
         8 : begin
-          data_int   <= 3;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 9;
+          data_int <= 3;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          init_state    <= 9;
         end
-        // falling edge of EN for 4 bit init (repeated) - writing 3
+        // wait 0ms
         9 : begin
-          en_int     <= 1'b0;
-          init_state <= 10;
+          en_int <= 1'b0;
+          init_state  <= 10;
         end
-        // delay
+        // wait 1ms
         10 : begin
-          init_state    <= 11;
+          init_state  <= 11;
         end
-        // delay
+        // wait 2ms
         11 : begin
-          init_state    <= 12;
+          init_state  <= 12;
         end
-        // delay
+        // wait 3ms
         12 : begin
-          init_state    <= 13;
+          init_state  <= 13;
         end
-        // delay
+        // wait 4ms
         13 : begin
-          init_state    <= 14;
+          init_state  <= 14;
         end
-        // delay
+        // wait 5ms
         14 : begin
-          init_state    <= 15;
+          init_state  <= 15;
         end
-        // rising edge of EN for 4 bit init (repeated) - writing 3
+        // repeat init 4 bit mode
         15 : begin
-          data_int   <= 3;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 16;
+          data_int <= 3;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          init_state    <= 16;
         end
-        // falling edge of EN for 4 bit init (repeated) - writing 3
+        // wait 0ms
         16 : begin
-          en_int     <= 1'b0;
-          init_state <= 17;
+          en_int <= 1'b0;
+          init_state  <= 17;
         end
-        // delay
+        // wait 1ms
         17 : begin
-          init_state    <= 18;
+          init_state  <= 18;
         end
-        // rising edge of EN for 4 bit mode - writing 2
+        // set to 4 bit mode
         18 : begin
-          data_int   <= 2;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 19;
+          data_int <= 2;
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          init_state    <= 19;
         end
-        // falling edge of EN for 4 bit mode - writing 2
+        // wait 0ms
         19 : begin
-          en_int     <= 1'b0;
-          init_state <= 20;
+          en_int <= 1'b0;
+          init_state  <= 20;
         end
-        // rising edge of EN for FUNCTIONSET (MSB) - writing 2
         20 : begin
-          data_int   <= 2;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 21;
+          data_int <= (init_sequence[idx] >> 4);
+          rs_int   <= 1'b0;
+          en_int   <= 1'b1;
+          init_state    <= 21;
         end
-        // falling edge of EN for FUNCTIONSET (MSB) - writing 2
+        // wait 0ms
         21 : begin
-          en_int     <= 1'b0;
-          init_state <= 22;
+          en_int <= 1'b0;
+          init_state  <= 22;
         end
-        // rising edge of EN for FUNCTIONSET (LSB) - writing 8
         22 : begin
-          data_int   <= 8;
-          rs_int     <= 1'b0;
+          data_int   <= (init_sequence[idx] & 15);
+          rs_int   <= 1'b0;
           en_int     <= 1'b1;
+          idx <= idx + 1;
           init_state <= 23;
         end
-        // falling edge of EN for FUNCTIONSET (LSB) - writing 8
+        // wait 0ms
         23 : begin
           en_int     <= 1'b0;
-          init_state <= 24;
+          if (idx == 4) begin
+            init_state <= 24;
+            idx <= 0;
+          end else begin
+            init_state <= 20;
+          end
         end
-        // rising edge of EN for DISPLAYCONTROL (MSB) - writing 0
+        // wait 1ms
         24 : begin
-          data_int   <= 0;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 25;
+          init_state  <= 25;
         end
-        // falling edge of EN for DISPLAYCONTROL (MSB) - writing 0
+        // wait 2ms
         25 : begin
-          en_int     <= 1'b0;
-          init_state <= 26;
+          init_state  <= 26;
         end
-        // rising edge of EN for DISPLAYCONTROL (LSB) - writing 12
+        // init done
         26 : begin
-          data_int   <= 12;
-          rs_int     <= 1'b0;
+          if (init_text[idx] == 0) begin
+            data_int   <= 2; // space
+          end else begin
+            data_int   <= 4 | init_text[idx][5:4]; // MSB
+          end
+          rs_int     <= 1'b1;
           en_int     <= 1'b1;
           init_state <= 27;
         end
-        // falling edge of EN for DISPLAYCONTROL (LSB) - writing 12
+        // wait 0ms
         27 : begin
-          en_int     <= 1'b0;
-          init_state <= 28;
+          en_int <= 1'b0;
+          init_state  <= 28;
         end
-        // rising edge of EN for ENTRYMODESET (MSB) - writing 0
         28 : begin
-          data_int   <= 0;
-          rs_int     <= 1'b0;
+          if (init_text[idx] == 0) begin
+            data_int   <= 0; // space
+          end else begin
+            data_int   <= init_text[idx][3:0];
+          end
+          rs_int     <= 1'b1;
           en_int     <= 1'b1;
           init_state <= 29;
+          idx        <= idx + 1;
         end
-        // falling edge of EN for ENTRYMODESET (MSB) - writing 0
+        // wait 0ms
         29 : begin
           en_int     <= 1'b0;
-          init_state <= 30;
+          if (idx == 16) begin
+            init_state <= 31;
+            idx <= 0;
+          end else begin
+            init_state <= 26;
+          end
         end
-        // rising edge of EN for ENTRYMODESET (LSB) - writing 6
-        30 : begin
-          data_int   <= 6;
+        // time refresh
+        31: begin
+          // cursor to second row
+          data_int <= 8 + 4; // SETDDRAMADDR + 2nd Row
           rs_int     <= 1'b0;
           en_int     <= 1'b1;
-          init_state <= 31;
-        end
-        // falling edge of EN for ENTRYMODESET (LSB) - writing 6
-        31 : begin
-          en_int     <= 1'b0;
           init_state <= 32;
         end
-        // rising edge of EN for CLEARDISPLAY (MSB) - writing 0
+        // wait 0ms
         32 : begin
-          data_int   <= 0;
+          en_int <= 1'b0;
+          init_state  <= 33;
+        end
+        33: begin
+          // cursor to second row, 4th column
+          data_int <= 4;
           rs_int     <= 1'b0;
           en_int     <= 1'b1;
-          init_state <= 33;
-        end
-        // falling edge of EN for CLEARDISPLAY (MSB) - writing 0
-        33 : begin
-          en_int     <= 1'b0;
           init_state <= 34;
         end
-        // rising edge of EN for CLEARDISPLAY (LSB) - writing 1
+        // wait 0ms
         34 : begin
-          data_int   <= 1;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 35;
-        end
-        // falling edge of EN for CLEARDISPLAY (LSB) - writing 1
-        35 : begin
-          en_int     <= 1'b0;
-          init_state <= 36;
-        end
-        // rising edge of EN for I (MSB) - writing 4
-        36 : begin
-          data_int   <= 4;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 37;
-        end
-        // falling edge of EN for I (MSB) - writing 4
-        37 : begin
-          en_int     <= 1'b0;
-          init_state <= 38;
-        end
-        // rising edge of EN for I (LSB) - writing 9
-        38 : begin
-          data_int   <= 9;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 39;
-        end
-        // falling edge of EN for I (LSB) - writing 9
-        39 : begin
-          en_int     <= 1'b0;
-          init_state <= 40;
-        end
-        // rising edge of EN for t (MSB) - writing 7
-        40 : begin
-          data_int   <= 7;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 41;
-        end
-        // falling edge of EN for t (MSB) - writing 7
-        41 : begin
-          en_int     <= 1'b0;
-          init_state <= 42;
-        end
-        // rising edge of EN for t (LSB) - writing 4
-        42 : begin
-          data_int   <= 4;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 43;
-        end
-        // falling edge of EN for t (LSB) - writing 4
-        43 : begin
-          en_int     <= 1'b0;
-          init_state <= 44;
-        end
-        // rising edge of EN for s (MSB) - writing 7
-        44 : begin
-          data_int   <= 7;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 45;
-        end
-        // falling edge of EN for s (MSB) - writing 7
-        45 : begin
-          en_int     <= 1'b0;
-          init_state <= 46;
-        end
-        // rising edge of EN for s (LSB) - writing 3
-        46 : begin
-          data_int   <= 3;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 47;
-        end
-        // falling edge of EN for s (LSB) - writing 3
-        47 : begin
-          en_int     <= 1'b0;
-          init_state <= 48;
-        end
-        // rising edge of EN for   (MSB) - writing 2
-        48 : begin
-          data_int   <= 2;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 49;
-        end
-        // falling edge of EN for   (MSB) - writing 2
-        49 : begin
-          en_int     <= 1'b0;
-          init_state <= 50;
-        end
-        // rising edge of EN for   (LSB) - writing 0
-        50 : begin
-          data_int   <= 0;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 51;
-        end
-        // falling edge of EN for   (LSB) - writing 0
-        51 : begin
-          en_int     <= 1'b0;
-          init_state <= 52;
-        end
-        // rising edge of EN for T (MSB) - writing 5
-        52 : begin
-          data_int   <= 5;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 53;
-        end
-        // falling edge of EN for T (MSB) - writing 5
-        53 : begin
-          en_int     <= 1'b0;
-          init_state <= 54;
-        end
-        // rising edge of EN for T (LSB) - writing 4
-        54 : begin
-          data_int   <= 4;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 55;
-        end
-        // falling edge of EN for T (LSB) - writing 4
-        55 : begin
-          en_int     <= 1'b0;
-          init_state <= 56;
-        end
-        // rising edge of EN for a (MSB) - writing 6
-        56 : begin
-          data_int   <= 6;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 57;
-        end
-        // falling edge of EN for a (MSB) - writing 6
-        57 : begin
-          en_int     <= 1'b0;
-          init_state <= 58;
-        end
-        // rising edge of EN for a (LSB) - writing 1
-        58 : begin
-          data_int   <= 1;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 59;
-        end
-        // falling edge of EN for a (LSB) - writing 1
-        59 : begin
-          en_int     <= 1'b0;
-          init_state <= 60;
-        end
-        // rising edge of EN for p (MSB) - writing 7
-        60 : begin
-          data_int   <= 7;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 61;
-        end
-        // falling edge of EN for p (MSB) - writing 7
-        61 : begin
-          en_int     <= 1'b0;
-          init_state <= 62;
-        end
-        // rising edge of EN for p (LSB) - writing 0
-        62 : begin
-          data_int   <= 0;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 63;
-        end
-        // falling edge of EN for p (LSB) - writing 0
-        63 : begin
-          en_int     <= 1'b0;
-          init_state <= 64;
-        end
-        // rising edge of EN for e (MSB) - writing 6
-        64 : begin
-          data_int   <= 6;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 65;
-        end
-        // falling edge of EN for e (MSB) - writing 6
-        65 : begin
-          en_int     <= 1'b0;
-          init_state <= 66;
-        end
-        // rising edge of EN for e (LSB) - writing 5
-        66 : begin
-          data_int   <= 5;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 67;
-        end
-        // falling edge of EN for e (LSB) - writing 5
-        67 : begin
-          en_int     <= 1'b0;
-          init_state <= 68;
-        end
-        // rising edge of EN for o (MSB) - writing 6
-        68 : begin
-          data_int   <= 6;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 69;
-        end
-        // falling edge of EN for o (MSB) - writing 6
-        69 : begin
-          en_int     <= 1'b0;
-          init_state <= 70;
-        end
-        // rising edge of EN for o (LSB) - writing 15
-        70 : begin
-          data_int   <= 15;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 71;
-        end
-        // falling edge of EN for o (LSB) - writing 15
-        71 : begin
-          en_int     <= 1'b0;
-          init_state <= 72;
-        end
-        // rising edge of EN for u (MSB) - writing 7
-        72 : begin
-          data_int   <= 7;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 73;
-        end
-        // falling edge of EN for u (MSB) - writing 7
-        73 : begin
-          en_int     <= 1'b0;
-          init_state <= 74;
-        end
-        // rising edge of EN for u (LSB) - writing 5
-        74 : begin
-          data_int   <= 5;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 75;
-        end
-        // falling edge of EN for u (LSB) - writing 5
-        75 : begin
-          en_int     <= 1'b0;
-          init_state <= 76;
-        end
-        // rising edge of EN for t (MSB) - writing 7
-        76 : begin
-          data_int   <= 7;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 77;
-        end
-        // falling edge of EN for t (MSB) - writing 7
-        77 : begin
-          en_int     <= 1'b0;
-          init_state <= 78;
-        end
-        // rising edge of EN for t (LSB) - writing 4
-        78 : begin
-          data_int   <= 4;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 79;
-        end
-        // falling edge of EN for t (LSB) - writing 4
-        79 : begin
-          en_int     <= 1'b0;
-          init_state <= 80;
-        end
-        // rising edge of EN for   (MSB) - writing 2
-        80 : begin
-          data_int   <= 2;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 81;
-        end
-        // falling edge of EN for   (MSB) - writing 2
-        81 : begin
-          en_int     <= 1'b0;
-          init_state <= 82;
-        end
-        // rising edge of EN for   (LSB) - writing 0
-        82 : begin
-          data_int   <= 0;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 83;
-        end
-        // falling edge of EN for   (LSB) - writing 0
-        83 : begin
-          en_int     <= 1'b0;
-          init_state <= 84;
-        end
-        // rising edge of EN for T (MSB) - writing 5
-        84 : begin
-          data_int   <= 5;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 85;
-        end
-        // falling edge of EN for T (MSB) - writing 5
-        85 : begin
-          en_int     <= 1'b0;
-          init_state <= 86;
-        end
-        // rising edge of EN for T (LSB) - writing 4
-        86 : begin
-          data_int   <= 4;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 87;
-        end
-        // falling edge of EN for T (LSB) - writing 4
-        87 : begin
-          en_int     <= 1'b0;
-          init_state <= 88;
-        end
-        // rising edge of EN for i (MSB) - writing 6
-        88 : begin
-          data_int   <= 6;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 89;
-        end
-        // falling edge of EN for i (MSB) - writing 6
-        89 : begin
-          en_int     <= 1'b0;
-          init_state <= 90;
-        end
-        // rising edge of EN for i (LSB) - writing 9
-        90 : begin
-          data_int   <= 9;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 91;
-        end
-        // falling edge of EN for i (LSB) - writing 9
-        91 : begin
-          en_int     <= 1'b0;
-          init_state <= 92;
-        end
-        // rising edge of EN for m (MSB) - writing 6
-        92 : begin
-          data_int   <= 6;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 93;
-        end
-        // falling edge of EN for m (MSB) - writing 6
-        93 : begin
-          en_int     <= 1'b0;
-          init_state <= 94;
-        end
-        // rising edge of EN for m (LSB) - writing 13
-        94 : begin
-          data_int   <= 13;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 95;
-        end
-        // falling edge of EN for m (LSB) - writing 13
-        95 : begin
-          en_int     <= 1'b0;
-          init_state <= 96;
-        end
-        // rising edge of EN for e (MSB) - writing 6
-        96 : begin
-          data_int   <= 6;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 97;
-        end
-        // falling edge of EN for e (MSB) - writing 6
-        97 : begin
-          en_int     <= 1'b0;
-          init_state <= 98;
-        end
-        // rising edge of EN for e (LSB) - writing 5
-        98 : begin
-          data_int   <= 5;
-          rs_int     <= 1'b1;
-          en_int     <= 1'b1;
-          init_state <= 99;
-        end
-        // falling edge of EN for e (LSB) - writing 5
-        99 : begin
-          en_int     <= 1'b0;
-          init_state <= 100;
-        end
-        // rising edge of EN for SETDDRAMADDR + 2nd Row (MSB) - writing 12
-        100 : begin
-          data_int   <= 12;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 101;
-        end
-        // falling edge of EN for SETDDRAMADDR + 2nd Row (MSB) - writing 12
-        101 : begin
-          en_int     <= 1'b0;
-          init_state <= 102;
-        end
-        // rising edge of EN for SETDDRAMADDR + 2nd Row (LSB) - writing 4
-        102 : begin
-          data_int   <= 4;
-          rs_int     <= 1'b0;
-          en_int     <= 1'b1;
-          init_state <= 103;
-        end
-        // falling edge of EN for SETDDRAMADDR + 2nd Row (LSB) - writing 4
-        103 : begin
-          en_int     <= 1'b0;
-          init_state <= 135;
+          en_int <= 1'b0;
+          init_state  <= 35;
         end
         // display the first digit of the hour
-        135 : begin
+        35 : begin
           if (time_hours < 10) begin
             data_int <= " " >> 4;
           end else begin
@@ -654,14 +284,14 @@ module lcd
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 136;
+          init_state <= 36;
         end
         // wait 0ms
-        136 : begin
+        36 : begin
           en_int <= 1'b0;
-          init_state  <= 137;
+          init_state  <= 37;
         end
-        137 : begin
+        37 : begin
           if (time_hours < 10) begin
             data_int <= " " & 15;
           end else begin
@@ -669,39 +299,39 @@ module lcd
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 138;
+          init_state <= 38;
         end
         // wait 0ms
-        138 : begin
+        38 : begin
           en_int     <= 1'b0;
-          init_state <= 139;
+          init_state <= 39;
         end
         // display the second digit of the hour
-        139 : begin
+        39 : begin
           data_int   <= "0" >> 4; // MSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 140;
+          init_state <= 40;
         end
         // wait 0ms
-        140 : begin
+        40 : begin
           en_int <= 1'b0;
-          init_state  <= 141;
+          init_state  <= 41;
         end
-        141 : begin
+        41 : begin
           data_int   <= time_hours % 10; // LSB
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
-          init_state <= 142;
+          init_state <= 42;
         end
         // wait 0ms
         default : begin
           en_int     <= 1'b0;
-          init_state <= 100;
+          init_state <= 31;
         end
       endcase // case (init_state)
 
-      if (init_state != 0 && time_divider == (CLOCK_RATE/60-1)) begin
+      if (time_divider == (CLOCK_RATE*60-1)) begin
         time_divider     <= 0;
         if (time_minutes != 59) begin
           time_minutes <= time_minutes + 1;
