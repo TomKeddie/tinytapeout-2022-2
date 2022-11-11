@@ -23,7 +23,6 @@ module lcd
   assign data = data_int;
 
   reg [5:0]     init_state;
-  reg           init_done;
   reg [4:0]     idx;
 
   wire [7:0]    init_sequence [0:3];
@@ -42,17 +41,10 @@ module lcd
   always @(posedge clk) begin
     // if reset, set counter to 0
     if (reset) begin
-      en_int       <= 1'b0;
-      rs_int       <= 1'b0;
-      data_int     <= 4'b0;
       init_state   <= 0;
       time_divider <= 40;
-      init_done    <= 0;
-      idx          <= 0;
       time_minutes <= 0;
       time_hours   <= 0;
-      min_inc_1d   <= 0;
-      hour_inc_1d  <= 0;
     end else begin
       case(init_state)
         // time_divider 40ms at startup
@@ -153,8 +145,9 @@ module lcd
         end
         // wait 0ms
         19 : begin
-          en_int <= 1'b0;
-          init_state  <= 20;
+          en_int     <= 1'b0;
+          init_state <= 20;
+          idx <= 0;
         end
         20 : begin
           data_int <= (init_sequence[idx] >> 4);
@@ -191,7 +184,6 @@ module lcd
         // wait 2ms
         25 : begin
           init_state  <= 26;
-          init_done   <= 1;
         end
         26: begin
           // cursor to home
@@ -354,7 +346,7 @@ module lcd
       end
 
       // clock divider and time incrementer
-      if (init_done) begin
+      if (init_state != 0) begin
         if (time_divider == (CLOCK_RATE*60-1)) begin
           time_divider     <= 0;
           if (time_minutes != 59) begin
