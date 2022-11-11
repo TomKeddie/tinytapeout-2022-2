@@ -52,7 +52,7 @@ module lcd
   // reg [3:0]            time_buffer[0:5];
   reg [5:0]            time_minutes;
   reg [4:0]            time_hours;
-  reg [13:0]           time_divider;
+  reg [15:0]           time_divider;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
