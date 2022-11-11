@@ -6,6 +6,7 @@ module lcd
   #(parameter CLOCK_RATE=1000)
   (
    input        clk,
+   input        stb_1min,
    input        reset,
    output       en,
    output       rs, 
@@ -13,46 +14,48 @@ module lcd
    ); 
 
 
-  reg                  en_int;
-  reg                  rs_int;
-  reg [3:0]            data_int;
+  reg           en_int;
+  reg           rs_int;
+  reg [3:0]     data_int;
   assign en   = en_int;
   assign rs   = rs_int;
   assign data = data_int;
 
-  reg [5:0]            init_state;
-  reg                  init_done;
-  reg [4:0]            idx;
+  reg [5:0]     init_delay;
+  reg [5:0]     init_state;
+  reg           init_done;
+  reg [4:0]     idx;
 
-  wire [7:0]           init_sequence [0:3];
+  wire [7:0]    init_sequence [0:3];
   assign init_sequence[0] = 'h28; // FUNCTIONSET
   assign init_sequence[1] = 'h0c; // DISPLAYCONTROL 
   assign init_sequence[2] = 'h06; // ENTRYMODESET
   assign init_sequence[3] = 'h01; // CLEARDISPLAY
 
-//   wire [5:0]           init_text [0:15];
-//   assign init_text[0]  = "I" - "A" + 1;
-//   assign init_text[1]  = "t" - "A" + 1;
-//   assign init_text[2]  = "s" - "A" + 1;
-//   assign init_text[3]  = 0;
-//   assign init_text[4]  = "T" - "A" + 1;
-//   assign init_text[5]  = "a" - "A" + 1;
-//   assign init_text[6]  = "p" - "A" + 1;
-//   assign init_text[7]  = "e" - "A" + 1;
-//   assign init_text[8]  = "o" - "A" + 1;
-//   assign init_text[9]  = "u" - "A" + 1;
-//   assign init_text[10] = "t" - "A" + 1;
-//   assign init_text[11] = 0;
-//   assign init_text[12] = "T" - "A" + 1;
-//   assign init_text[13] = "i" - "A" + 1;
-//   assign init_text[14] = "m" - "A" + 1;
-//   assign init_text[15] = "e" - "A" + 1;
+  reg           stb_1min_1d;
+
+  //   wire [5:0]           init_text [0:15];
+  //   assign init_text[0]  = "I" - "A" + 1;
+  //   assign init_text[1]  = "t" - "A" + 1;
+  //   assign init_text[2]  = "s" - "A" + 1;
+  //   assign init_text[3]  = 0;
+  //   assign init_text[4]  = "T" - "A" + 1;
+  //   assign init_text[5]  = "a" - "A" + 1;
+  //   assign init_text[6]  = "p" - "A" + 1;
+  //   assign init_text[7]  = "e" - "A" + 1;
+  //   assign init_text[8]  = "o" - "A" + 1;
+  //   assign init_text[9]  = "u" - "A" + 1;
+  //   assign init_text[10] = "t" - "A" + 1;
+  //   assign init_text[11] = 0;
+  //   assign init_text[12] = "T" - "A" + 1;
+  //   assign init_text[13] = "i" - "A" + 1;
+  //   assign init_text[14] = "m" - "A" + 1;
+  //   assign init_text[15] = "e" - "A" + 1;
 
   // time buffer 00:00:00
   // reg [3:0]            time_buffer[0:5];
-  reg [5:0]            time_minutes;
-  reg [4:0]            time_hours;
-  reg [15:0]           time_divider;
+  reg [5:0]     time_minutes;
+  reg [4:0]     time_hours;
 
   always @(posedge clk) begin
     // if reset, set counter to 0
@@ -61,21 +64,20 @@ module lcd
       rs_int       <= 1'b0;
       data_int     <= 4'b0;
       init_state   <= 0;
-      time_divider   <= 40;
-      init_done    <= 0;
+      init_delay   <= 0;
       idx          <= 0;
       time_minutes <= 0;
-      time_hours <= 0;
+      time_hours   <= 0;
+      stb_1min_1d <= 0;
     end else begin
       case(init_state)
         // time_divider 40ms at startup
         0 : begin
-          if (time_divider != 0)
-            begin
-              time_divider <= time_divider - 1;
-            end else begin
-              init_state <= 1;
-            end                  
+          if (init_delay == 40) begin
+            init_state <= 1;
+          end else begin
+            init_delay <= init_delay + 1;
+          end
         end
         // init 4 bit mode
         1 : begin
@@ -204,47 +206,45 @@ module lcd
         // wait 2ms
         25 : begin
           init_state  <= 31;
-          init_done   <= 1;
         end
         // init done
-//         26 : begin
-//           if (init_text[idx] == 0) begin
-//             data_int   <= 2; // space
-//           end else begin
-//             data_int   <= 4 | init_text[idx][5:4]; // MSB
-//           end
-//           rs_int     <= 1'b1;
-//           en_int     <= 1'b1;
-//           init_state <= 27;
-//         end
-//         // wait 0ms
-//         27 : begin
-//           en_int <= 1'b0;
-//           init_state  <= 28;
-//         end
-//         28 : begin
-//           if (init_text[idx] == 0) begin
-//             data_int   <= 0; // space
-//           end else begin
-//             data_int   <= init_text[idx][3:0];
-//           end
-//           rs_int     <= 1'b1;
-//           en_int     <= 1'b1;
-//           init_state <= 29;
-//           idx        <= idx + 1;
-//         end
-//         // wait 0ms
-//         29 : begin
-//           en_int     <= 1'b0;
-//           if (idx == 16) begin
-//             init_state <= 31;
-//             idx        <= 0;
-//             init_done    <= 1;
-//           end else begin
-//             init_state <= 26;
-//           end
-//         end
-//         // time refresh
+        //         26 : begin
+        //           if (init_text[idx] == 0) begin
+        //             data_int   <= 2; // space
+        //           end else begin
+        //             data_int   <= 4 | init_text[idx][5:4]; // MSB
+        //           end
+        //           rs_int     <= 1'b1;
+        //           en_int     <= 1'b1;
+        //           init_state <= 27;
+        //         end
+        //         // wait 0ms
+        //         27 : begin
+        //           en_int <= 1'b0;
+        //           init_state  <= 28;
+        //         end
+        //         28 : begin
+        //           if (init_text[idx] == 0) begin
+        //             data_int   <= 0; // space
+        //           end else begin
+        //             data_int   <= init_text[idx][3:0];
+        //           end
+        //           rs_int     <= 1'b1;
+        //           en_int     <= 1'b1;
+        //           init_state <= 29;
+        //           idx        <= idx + 1;
+        //         end
+        //         // wait 0ms
+        //         29 : begin
+        //           en_int     <= 1'b0;
+        //           if (idx == 16) begin
+        //             init_state <= 31;
+        //             idx        <= 0;
+        //           end else begin
+        //             init_state <= 26;
+        //           end
+        //         end
+        //         // time refresh
         31: begin
           // cursor to second row
           data_int <= 8 + 4; // SETDDRAMADDR + 2nd Row
@@ -394,23 +394,19 @@ module lcd
         end
       endcase // case (init_state)
 
-      if (init_done) begin
-        if (time_divider == (CLOCK_RATE*60-1)) begin
-          time_divider     <= 0;
-          if (time_minutes != 59) begin
-            time_minutes <= time_minutes + 1;
-          end else begin
-            time_minutes   <= 0;
-            if (time_hours != 23) begin
-              time_hours <= time_hours + 1;
-            end else begin
-              time_hours <= 0;
-            end
-          end
+      stb_1min_1d <= stb_1min;
+      if (stb_1min_1d == 0 && stb_1min == 1) begin
+        if (time_minutes != 59) begin
+          time_minutes <= time_minutes + 1;
         end else begin
-          time_divider <= time_divider + 1;
-        end // else: !if(time_divider == (CLOCK_RATE*60-1))
+          time_minutes   <= 0;
+          if (time_hours != 23) begin
+            time_hours <= time_hours + 1;
+          end else begin
+            time_hours <= 0;
+          end
+        end
+      end
     end
-  end
   end
 endmodule
