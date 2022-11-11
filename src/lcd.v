@@ -257,8 +257,8 @@ module lcd
           init_state  <= 33;
         end
         33: begin
-          // cursor to second row, 4th column
-          data_int <= 4;
+          // cursor to second row, nth column
+          data_int <= 11;
           rs_int     <= 1'b0;
           en_int     <= 1'b1;
           init_state <= 34;
@@ -288,7 +288,7 @@ module lcd
           if (time_hours < 10) begin
             data_int <= " " & 15;
           end else begin
-            data_int   <= time_hours/10; // LSB
+            data_int   <= time_hours / 10; // LSB
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
@@ -316,6 +316,75 @@ module lcd
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
           init_state <= 42;
+        end
+        // wait 0ms
+        42 : begin
+          en_int     <= 1'b0;
+          init_state <= 43;
+        end
+        // display the colon
+        43 : begin
+          data_int   <= ":" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 44;
+        end
+        // wait 0ms
+        44 : begin
+          en_int <= 1'b0;
+          init_state  <= 45;
+        end
+        45 : begin
+          data_int   <= ":" & 15; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 46;
+        end
+        // wait 0ms
+        46 : begin
+          en_int     <= 1'b0;
+          init_state <= 47;
+        end
+        // display the first digit of the minutes
+        47 : begin
+          data_int <= "0" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 48;
+        end
+        // wait 0ms
+        48 : begin
+          en_int <= 1'b0;
+          init_state  <= 49;
+        end
+        49 : begin
+          data_int   <= time_minutes / 10; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 50;
+        end
+        // wait 0ms
+        50 : begin
+          en_int     <= 1'b0;
+          init_state <= 51;
+        end
+        // display the second digit of the minutes
+        51 : begin
+          data_int   <= "0" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 52;
+        end
+        // wait 0ms
+        52 : begin
+          en_int <= 1'b0;
+          init_state  <= 53;
+        end
+        53 : begin
+          data_int   <= time_minutes % 10; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 54;
         end
         // wait 0ms
         default : begin
