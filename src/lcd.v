@@ -20,7 +20,6 @@ module lcd
   assign rs   = rs_int;
   assign data = data_int;
 
-  reg [6:0]            init_delay;
   reg [5:0]            init_state;
   reg                  init_done;
   reg [4:0]            idx;
@@ -62,25 +61,18 @@ module lcd
       rs_int       <= 1'b0;
       data_int     <= 4'b0;
       init_state   <= 0;
-      init_delay   <= 40;
+      time_divider   <= 40;
       init_done    <= 0;
       idx          <= 0;
-//       time_buffer[0] <= 0;
-//       time_buffer[1] <= 0;
-//       time_buffer[2] <= 0;
-//       time_buffer[3] <= 0;
-//       time_buffer[4] <= 0;
-//       time_buffer[5] <= 0;
       time_minutes <= 0;
       time_hours <= 0;
-      time_divider <= 0;
     end else begin
       case(init_state)
-        // init_delay 40ms at startup
+        // time_divider 40ms at startup
         0 : begin
-          if (init_delay != 0) 
+          if (time_divider != 0)
             begin
-              init_delay <= init_delay - 1;
+              time_divider <= time_divider - 1;
             end else begin
               init_state <= 1;
             end                  
@@ -245,7 +237,8 @@ module lcd
           en_int     <= 1'b0;
           if (idx == 16) begin
             init_state <= 31;
-            idx <= 0;
+            idx        <= 0;
+            init_done    <= 1;
           end else begin
             init_state <= 26;
           end
@@ -331,21 +324,23 @@ module lcd
         end
       endcase // case (init_state)
 
-      if (time_divider == (CLOCK_RATE*60-1)) begin
-        time_divider     <= 0;
-        if (time_minutes != 59) begin
-          time_minutes <= time_minutes + 1;
-        end else begin
-          time_minutes   <= 0;
-          if (time_hours != 23) begin
-            time_hours <= time_hours + 1;
+      if (init_done) begin
+        if (time_divider == (CLOCK_RATE*60-1)) begin
+          time_divider     <= 0;
+          if (time_minutes != 59) begin
+            time_minutes <= time_minutes + 1;
           end else begin
-            time_hours <= 0;
+            time_minutes   <= 0;
+            if (time_hours != 23) begin
+              time_hours <= time_hours + 1;
+            end else begin
+              time_hours <= 0;
+            end
           end
-        end
-      end else begin
-        time_divider <= time_divider + 1;
-      end
+        end else begin
+          time_divider <= time_divider + 1;
+        end // else: !if(time_divider == (CLOCK_RATE*60-1))
     end
+  end
   end
 endmodule
