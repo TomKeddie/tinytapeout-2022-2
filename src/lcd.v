@@ -53,7 +53,6 @@ module lcd
   // reg [3:0]            time_buffer[0:5];
   reg [5:0]            time_minutes;
   reg [4:0]            time_hours;
-  reg                  time_refresh;
   reg [13:0]           time_divider;
 
   always @(posedge clk) begin
@@ -74,7 +73,6 @@ module lcd
 //       time_buffer[5] <= 0;
       time_minutes <= 0;
       time_hours <= 0;
-      time_refresh <= 1;
       time_divider <= 0;
     end else begin
       case(init_state)
@@ -213,7 +211,7 @@ module lcd
         end
         // wait 2ms
         25 : begin
-          init_state  <= 30;
+          init_state  <= 31;
         end
 //         // init done
 //         26 : begin
@@ -253,12 +251,6 @@ module lcd
 //           end
 //         end
         // time refresh
-        30 : begin
-          if (time_refresh == 1) begin
-            time_refresh  = 0;
-            init_state   <= 31;
-          end
-        end                     
         31: begin
           // cursor to second row
           data_int <= 8 + 4; // SETDDRAMADDR + 2nd Row
@@ -283,9 +275,9 @@ module lcd
           en_int <= 1'b0;
           init_state  <= 35;
         end
-        // display the time
+        // display the first digit of the hour
         35 : begin
-          if (idx == 0 && time_hours == 0) begin
+          if (time_hours < 10) begin
             data_int <= " " >> 4;
           end else begin
             data_int   <= "0" >> 4; // MSB
@@ -300,33 +292,46 @@ module lcd
           init_state  <= 37;
         end
         37 : begin
-          if (idx == 0 && time_minutes == 0) begin
+          if (time_hours < 10) begin
             data_int <= " " & 15;
           end else begin
-            data_int   <= time_hours; // LSB
+            data_int   <= time_hours/10; // LSB
           end
           rs_int     <= 1'b1;
           en_int     <= 1'b1;
           init_state <= 38;
-          idx <= idx + 1;
         end
         // wait 0ms
         38 : begin
           en_int     <= 1'b0;
-          if (idx == 6) begin
-            init_state <= 39;
-            idx <= 0;
-          end else begin
-            init_state <= 35;
-          end
+          init_state <= 39;
         end
+        // display the second digit of the hour
+        39 : begin
+          data_int   <= "0" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 40;
+        end
+        // wait 0ms
+        40 : begin
+          en_int <= 1'b0;
+          init_state  <= 41;
+        end
+        41 : begin
+          data_int   <= time_hours % 10; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 42;
+        end
+        // wait 0ms
         default : begin
-          init_state <= 30;
+          en_int     <= 1'b0;
+          init_state <= 31;
         end
       endcase // case (init_state)
 
-      if (time_divider == (CLOCK_RATE-1)*60) begin
-        time_refresh     <= 1;
+      if (time_divider == (CLOCK_RATE*60-1)) begin
         time_divider     <= 0;
         if (time_minutes != 59) begin
           time_minutes <= time_minutes + 1;
