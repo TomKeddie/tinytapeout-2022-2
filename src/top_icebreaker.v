@@ -62,6 +62,6 @@ module top
   end
 
   // instantiate the DUT
-  top_tto top_tto(.io_in(inputs), .io_out(outputs));
+  tomkeddie_top_tto tomkeddie_top_tto(.io_in(inputs), .io_out(outputs));
 
 endmodule

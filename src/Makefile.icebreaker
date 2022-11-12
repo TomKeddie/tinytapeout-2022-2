@@ -4,7 +4,7 @@ PIN_DEF = icebreaker-examples/icebreaker/icebreaker.pcf
 DEVICE = up5k
 PACKAGE = sg48
 
-ADD_SRC = top_tto.v lcd.v
+ADD_SRC = tomkeddie_top_tto.v lcd.v
 
 prog: iceprog
 
