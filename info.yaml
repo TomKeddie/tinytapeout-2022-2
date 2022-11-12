@@ -24,7 +24,7 @@ documentation:
   language:     "verilog" # other examples include Verilog, Amaranth, VHDL, etc
   doc_link:     "https://github.com/TomKeddie/tinytapeout-2022-2/blob/main/doc/README.md"
   clock_hz:     1000       # Clock frequency in Hz (if required)
-  picture:      ""      # relative path to a picture in your repository
+  picture:      "doc/wiring.png"      # relative path to a picture in your repository
   inputs:               # a description of what the inputs do
     - clock
     - reset

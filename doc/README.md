@@ -1,5 +1,2 @@
-# HD74480 Clock & UART transmitter
+# HD74480 Clock
 
-## UART transmitter
-
-## HD74480 Clock
