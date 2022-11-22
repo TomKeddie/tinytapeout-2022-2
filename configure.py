@@ -93,6 +93,13 @@ def check_docs(yaml):
             logging.error("missing value for {} in documentation".format(key))
             exit(1)
 
+    # if provided, check discord handle is valid
+    if len(yaml['documentation']['discord']):
+        parts = yaml['documentation']['discord'].split('#')
+        if len(parts) != 2 or len(parts[0]) == 0 or not re.match('^[0-9]{4}$', parts[1]):
+            logging.error(f'Invalid format for discord username')
+            exit(1)
+
 
 def get_top_module(yaml):
     wokwi_id = int(yaml['project']['wokwi_id'])
@@ -149,4 +156,5 @@ if __name__ == '__main__':
         config = load_yaml(args.yaml)
         source_files = get_project_source(config)
         top_module = get_top_module(config)
+        assert top_module != 'top'
         write_user_config(top_module, source_files)
