@@ -31,6 +31,7 @@ module lcd
   assign init_sequence[2] = 'h06; // ENTRYMODESET
   assign init_sequence[3] = 'h01; // CLEARDISPLAY
 
+  reg [5:0]     time_seconds;
   reg [5:0]     time_minutes;
   reg [4:0]     time_hours;
   reg [15:0]    time_divider;
@@ -43,6 +44,7 @@ module lcd
     if (reset) begin
       init_state   <= 0;
       time_divider <= 40;
+      time_seconds <= 0;
       time_minutes <= 0;
       time_hours   <= 0;
     end else begin
@@ -328,6 +330,75 @@ module lcd
           init_state <= 49;
         end
         // wait 0ms
+        49 : begin
+          en_int <= 1'b0;
+          init_state  <= 50;
+        end
+        // display the colon
+        50 : begin
+          data_int   <= ":" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 51;
+        end
+        // wait 0ms
+        51 : begin
+          en_int <= 1'b0;
+          init_state  <= 52;
+        end
+        52 : begin
+          data_int   <= ":" & 15; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 53;
+        end
+        // wait 0ms
+        53 : begin
+          en_int     <= 1'b0;
+          init_state <= 54;
+        end
+        // display the first digit of the seconds
+        54 : begin
+          data_int <= "0" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 55;
+        end
+        // wait 0ms
+        55 : begin
+          en_int <= 1'b0;
+          init_state  <= 56;
+        end
+        56 : begin
+          data_int   <= time_seconds / 10; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 57;
+        end
+        // wait 0ms
+       57 : begin
+          en_int     <= 1'b0;
+          init_state <= 58;
+        end
+        // display the second digit of the seconds
+        58 : begin
+          data_int   <= "0" >> 4; // MSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 59;
+        end
+        // wait 0ms
+        59 : begin
+          en_int <= 1'b0;
+          init_state  <= 60;
+        end
+        60 : begin
+          data_int   <= time_seconds % 10; // LSB
+          rs_int     <= 1'b1;
+          en_int     <= 1'b1;
+          init_state <= 61;
+        end
+        // wait 0ms
         default : begin
           en_int     <= 1'b0;
           init_state <= 26;
@@ -340,6 +411,7 @@ module lcd
       if (!min_inc_1d && min_inc) begin
         time_minutes <= time_minutes + 1;
         time_divider <= 0;
+	time_seconds <= 0;
       end
       if (!hour_inc_1d && hour_inc) begin
         time_hours <= time_hours + 1;
@@ -347,17 +419,22 @@ module lcd
 
       // clock divider and time incrementer
       if (init_state != 0) begin
-        if (time_divider == (CLOCK_RATE*60-1)) begin
+        if (time_divider == (CLOCK_RATE-1)) begin
           time_divider     <= 0;
-          if (time_minutes != 59) begin
-            time_minutes <= time_minutes + 1;
-          end else begin
-            time_minutes   <= 0;
-            if (time_hours != 23) begin
-              time_hours <= time_hours + 1;
+	  if (time_seconds != 59) begin
+	    time_seconds <= time_seconds + 1;
+	  end else begin
+	    time_seconds <= 0;
+            if (time_minutes != 59) begin
+              time_minutes <= time_minutes + 1;
             end else begin
-              time_hours <= 0;
-            end
+              time_minutes   <= 0;
+              if (time_hours != 23) begin
+                time_hours <= time_hours + 1;
+              end else begin
+                time_hours <= 0;
+              end
+	    end
           end
         end else begin
           time_divider <= time_divider + 1;
